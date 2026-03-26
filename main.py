@@ -39,7 +39,8 @@ client = Groq(api_key=api_key)
 @app.post("/estimate")
 def estimate(deal: DealRequest):
     prompt = f"""
-    You are a film licensing consultant. Estimate a licensing price for this deal:
+    You are a senior film licensing consultant with deep expertise in content rights deals globally.
+    Estimate a licensing price for this deal:
 
     - Title: {deal.title}
     - IMDB: {deal.imdb_link}
@@ -48,6 +49,23 @@ def estimate(deal: DealRequest):
     - Rights Type: {deal.rights_type}
     - Language Rights: {deal.language_rights}
     - Platforms: {", ".join(deal.platforms)}
+
+    STRICT RULE 1 — MG must always be less than flat fee:
+    The minimum_guarantee is a guaranteed floor payment.
+    It must ALWAYS be lower than the flat_fee_range.
+    Example: if flat fee is USD 500k–2M, MG must be e.g. USD 200k–800k.
+    MG higher than flat fee is structurally impossible. Never do this.
+
+    STRICT RULE 2 — Platform value hierarchy (apply discounts):
+    - OTT / Streaming → base price (100%)
+    - Pay TV → 80–90% of OTT value
+    - Free-to-Air TV → 40–60% of OTT value
+    - FAST channels (Pluto TV, Tubi, Roku) → 10–25% of OTT value
+    - YouTube → 5–15% of OTT value, revenue share dominant
+
+    STRICT RULE 3 — Rights type multiplier:
+    - Exclusive rights → 2–3x higher than non-exclusive
+    - Original + Dubbed → 20–40% premium over original only
 
     Return ONLY a JSON object in this exact format, no extra text:
     {{
@@ -63,13 +81,33 @@ def estimate(deal: DealRequest):
     }}
     """
 
+
     response = client.chat.completions.create(
         model="llama-3.3-70b-versatile",
-        messages=[{"role": "user", "content": prompt}]
+        messages=[
+            {
+                "role": "system",
+                "content": "You are a film licensing consultant. Always respond with valid JSON only. Never add explanations or markdown formatting outside the JSON."
+            },
+            {
+                "role": "user",
+                "content": prompt
+            }
+        ]
     )
 
     import json
+
     result = response.choices[0].message.content
+
+    # Strip markdown fences if model wraps response in ```json ... ```
+    result = result.strip()
+    if result.startswith("```"):
+        result = result.split("```")[1]
+        if result.startswith("json"):
+            result = result[4:]
+        result = result.strip()
+
     return json.loads(result)
 
 
