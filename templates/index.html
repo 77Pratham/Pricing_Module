@@ -224,6 +224,10 @@
                     <input type="text" id="imdb_link" placeholder="https://imdb.com/title/tt…" />
                 </div>
                 <div class="field">
+                    <label>TMDB link</label>
+                    <input type="text" id="tmdb_link" placeholder="https://themoviedb.org/movie/…" />
+                </div>
+                <div class="field">
                     <label>Region</label>
                     <input type="text" id="region" placeholder="e.g. India, LATAM, Europe" />
                 </div>
@@ -280,6 +284,7 @@
             const data = {
                 title: document.getElementById("title").value,
                 imdb_link: document.getElementById("imdb_link").value,
+                tmdb_link: document.getElementById("tmdb_link").value,
                 region: document.getElementById("region").value,
                 duration: document.getElementById("duration").value,
                 rights_type: document.getElementById("rights_type").value,
