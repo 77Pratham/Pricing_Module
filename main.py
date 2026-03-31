@@ -17,6 +17,7 @@ class DealRequest(BaseModel):
     tmdb_link: Optional[str] = ""
     region: str
     duration: str
+    license_duration: str
     rights_type: str
     language_rights: str
     platforms: List[str]
@@ -138,6 +139,7 @@ def estimate(deal: DealRequest):
     - IMDB: {deal.imdb_link}
     - Region: {deal.region}
     - Duration: {deal.duration}
+    - License Duration: {deal.license_duration}
     - Rights Type: {deal.rights_type}
     - Language Rights: {deal.language_rights}
     - Platforms: {", ".join(deal.platforms)}
@@ -161,6 +163,15 @@ def estimate(deal: DealRequest):
     STRICT RULE 3 — Rights type multiplier:
     - Exclusive rights → 2–3x higher than non-exclusive
     - Original + Dubbed → 20–40% premium over original only
+
+    STRICT RULE 4 — License duration multiplier:
+    - 6 months → 0.4–0.5x of 1-year base price
+    - 1 year → base price (1x)
+    - 2 years → 1.6–1.8x of base price
+    - 3 years → 2–2.4x of base price
+    - 5 years → 2.8–3.2x of base price
+    - Perpetual / Permanent → 4–6x of base price, rare and premium
+    Always factor this multiplier into the final estimate.
 
     Return ONLY a JSON object in this exact format, no extra text:
     {{

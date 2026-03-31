@@ -240,6 +240,22 @@
                     <input type="text" id="rights_type" placeholder="Exclusive / Non-Exclusive" />
                 </div>
                 <div class="field">
+                    <label>License duration</label>
+                    <select class="pm-select" id="license_duration" onchange="toggleCustomDuration(this)">
+                        <option value="">Select duration…</option>
+                        <option value="6 months">6 months</option>
+                        <option value="1 year">1 year</option>
+                        <option value="2 years">2 years</option>
+                        <option value="3 years">3 years</option>
+                        <option value="5 years">5 years</option>
+                        <option value="Perpetual / Permanent">Perpetual / Permanent</option>
+                        <option value="custom">Custom…</option>
+                    </select>
+                    <input type="text" id="license_duration_custom"
+                        placeholder="e.g. 18 months"
+                        style="display:none; margin-top: 8px;" />
+                </div>
+                <div class="field">
                     <label>Language rights</label>
                     <input type="text" id="language_rights" placeholder="Original / Original + Dubbed" />
                 </div>
@@ -279,14 +295,31 @@
             el.classList.toggle('active')
             el.querySelector('input').checked = el.classList.contains('active')
         }
+        function toggleCustomDuration(select) {
+            const customInput = document.getElementById("license_duration_custom")
+            if (select.value === "custom") {
+                customInput.style.display = "block"
+                customInput.focus()
+            } else {
+                customInput.style.display = "none"
+                customInput.value = ""
+            }
+        }
 
         async function submitForm() {
+
+            const selectEl = document.getElementById("license_duration")
+            const license_duration = selectEl.value === "custom"
+                ? document.getElementById("license_duration_custom").value
+                : selectEl.value
+
             const data = {
                 title: document.getElementById("title").value,
                 imdb_link: document.getElementById("imdb_link").value,
                 tmdb_link: document.getElementById("tmdb_link").value,
                 region: document.getElementById("region").value,
                 duration: document.getElementById("duration").value,
+                license_duration: license_duration,
                 rights_type: document.getElementById("rights_type").value,
                 language_rights: document.getElementById("language_rights").value,
                 platforms: []
@@ -306,6 +339,12 @@
 
             if (data.platforms.length === 0) {
                 alert("Please select at least one platform.")
+                return
+            }
+
+                      
+            if (!license_duration.trim()) {
+                alert("Please select or enter a license duration.")
                 return
             }
 
