@@ -174,19 +174,28 @@ def estimate(deal: DealRequest):
     Always factor this multiplier into the final estimate.
 
     STRICT RULE 5 — Low data and unknown market handling:
-    Apply LOW-VALUE CAPS in ANY of these situations:
+    Apply LOW-VALUE BASE PRICING in ANY of these situations:
     - Box office revenue is missing, N/A, or under USD 5,000,000
     - IMDB vote count is under 10,000
     - Popularity score is under 3.0
     - Region is a small or emerging market
     (Trinidad, Caribbean, Pacific Islands, Sub-Saharan Africa,
-    Central Asia, or any country with under 10M population)
+    Central Asia, or any country under 10M population)
 
-    When caps apply, use THESE LIMITS — do not exceed them:
-    - Flat fee: USD 1,000 – USD 20,000
-    - MG: USD 500 – USD 8,000
-    - Revenue share: 5% – 15%
-    - Confidence level: MUST be "Low"
+    When these conditions apply:
+    - Start with a BASE flat fee of USD 1,000 – USD 10,000
+    - Then apply ALL other rules on top of this base:
+    * Rule 2: Platform hierarchy discount/premium
+    * Rule 3: Rights type multiplier (exclusive = 2-3x base)
+    * Rule 4: License duration multiplier (perpetual = 4-6x base)
+    * Language rights premium (+20-40% if dubbed)
+    - Final flat fee must NOT exceed USD 80,000 regardless of multipliers
+    - Final MG must NOT exceed USD 30,000 regardless of multipliers
+    - Confidence level: MUST always be "Low"
+
+    Example:
+    Base USD 5,000 × exclusive (2.5x) × perpetual (5x) = USD 62,500 flat fee ✅
+    Same film, 1 year non-exclusive = USD 5,000 flat fee ✅   
 
     This rule overrides all other rules. Do not let high ratings
     or awards override these caps when data is missing or market
