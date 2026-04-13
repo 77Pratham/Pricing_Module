@@ -173,6 +173,25 @@ def estimate(deal: DealRequest):
     - Perpetual / Permanent → 4–6x of base price, rare and premium
     Always factor this multiplier into the final estimate.
 
+    STRICT RULE 5 — Low data and unknown market handling:
+    Apply LOW-VALUE CAPS in ANY of these situations:
+    - Box office revenue is missing, N/A, or under USD 5,000,000
+    - IMDB vote count is under 10,000
+    - Popularity score is under 3.0
+    - Region is a small or emerging market
+    (Trinidad, Caribbean, Pacific Islands, Sub-Saharan Africa,
+    Central Asia, or any country with under 10M population)
+
+    When caps apply, use THESE LIMITS — do not exceed them:
+    - Flat fee: USD 1,000 – USD 20,000
+    - MG: USD 500 – USD 8,000
+    - Revenue share: 5% – 15%
+    - Confidence level: MUST be "Low"
+
+    This rule overrides all other rules. Do not let high ratings
+    or awards override these caps when data is missing or market
+    is small. A great film in a tiny market still has a tiny deal.
+
     Return ONLY a JSON object in this exact format, no extra text:
     {{
         "title": "",

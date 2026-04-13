@@ -1,0 +1,19 @@
+category,title,kaggle_revenue,vote_average,flat_fee_range,min_guarantee,revenue_share,confidence
+Blockbuster,Avatar,"$2,787,965,087",7.2,USD 1.5M - USD 3M,USD 600k - USD 1.2M,15% - 25%,Medium
+Blockbuster,Titanic,"$1,845,034,188",7.5,USD 1.5M - USD 3M,USD 600k - USD 1.2M,10% - 20%,Medium
+Blockbuster,The Avengers,"$1,519,557,910",7.4,USD 800k - USD 2M,USD 300k - USD 700k,10% - 20%,Medium
+Blockbuster,Jurassic World,"$1,513,528,810",6.5,USD 1.5M - USD 3.5M,USD 600k - USD 1.8M,15% - 25%,Medium
+Blockbuster,Furious 7,"$1,506,249,360",7.3,USD 800k - USD 1.2M,USD 300k - USD 600k,20% - 30%,Medium
+Mid-range,The Shawshank Redemption,"$28,341,469",8.5,USD 1.2M - USD 3.5M,USD 600k - USD 1.8M,15% - 25%,Medium
+Mid-range,The Godfather: Part II,"$47,542,841",8.3,USD 800k - USD 1.5M,USD 200k - USD 600k,10% - 20%,Medium
+Mid-range,Whiplash,"$13,092,000",8.3,"USD 150,000 - USD 300,000","USD 75,000 - USD 150,000",10% - 20%,Medium
+Mid-range,GoodFellas,"$46,836,394",8.2,"USD 300,000 - USD 900,000","USD 100,000 - USD 400,000",10% - 20%,Medium
+Mid-range,Psycho,"$32,000,000",8.2,"USD 750,000 - USD 1,500,000","USD 250,000 - USD 750,000",15% - 25%,Medium
+Low budget,Donnie Darko,"$1,270,522",7.7,USD 150k - USD 300k,USD 75k - USD 150k,10% - 20%,Medium
+Low budget,12 Angry Men,"$1,000,000",8.2,"USD 300,000 - USD 900,000","USD 150,000 - USD 450,000",10% - 20%,Medium
+Low budget,Lock Stock and Two Smoking Barrels,"$3,897,569",7.5,"USD 300,000 - USD 800,000","USD 100,000 - USD 400,000",10% - 20%,Medium
+Low budget,Cube,"$501,818",6.9,USD 150k - USD 300k,USD 75k - USD 150k,10% - 20%,Medium
+Low budget,I Origins,"$336,472",7.5,"USD 150,000 - USD 600,000","USD 75,000 - USD 300,000",10% - 20%,Medium
+Classic,The Godfather,"$245,066,411",8.4,USD 1.5M - USD 3M,USD 500k - USD 1.2M,10% - 20%,Medium
+Classic,Fight Club,"$100,853,753",8.3,"USD 750,000 - USD 1,500,000","USD 300,000 - USD 900,000",15% - 25%,Medium
+Classic,Schindler's List,"$321,365,567",8.3,USD 1.5M - USD 3M,USD 600k - USD 1.2M,10% - 20%,Medium
