@@ -6,20 +6,26 @@ from pathlib import Path
 from typing import List, Optional
 from google import genai
 from google.genai import types
+from groq import Groq
 from datetime import datetime
 import os
 import httpx
 import re
 import json
 
+# ── Environment ────────────────────────────────────────────────────────────────
 env_path = Path(__file__).resolve().with_name('.env')
 load_dotenv(dotenv_path=env_path)
 
+# ── App setup ──────────────────────────────────────────────────────────────────
 app = FastAPI()
 templates = Jinja2Templates(directory="templates")
-client = genai.Client(api_key=os.getenv("GEMINI_API_KEY1"))
 
+# ── AI Clients (initialized once at startup) ───────────────────────────────────
+gemini_client = genai.Client(api_key=os.getenv("GEMINI_API_KEY1"))
+groq_client   = Groq(api_key=os.getenv("GROQ_API_KEY"))
 
+# ── Data Model ─────────────────────────────────────────────────────────────────
 class DealRequest(BaseModel):
     title: str
     imdb_link: str
@@ -31,48 +37,48 @@ class DealRequest(BaseModel):
     language_rights: str
     platforms: List[str]
 
-
+# ── Enrichment Functions ───────────────────────────────────────────────────────
 def fetch_tmdb_data(tmdb_link: str) -> dict:
     try:
         match = re.search(r'/(movie|tv)/(\d+)', tmdb_link)
         if not match:
             return {}
         media_type = match.group(1)
-        tmdb_id = match.group(2)
-        api_key = os.getenv("TMDB_API_KEY")
-        url = f"https://api.themoviedb.org/3/{media_type}/{tmdb_id}?api_key={api_key}"
-        response = httpx.get(url, timeout=5)
-        data = response.json()
+        tmdb_id    = match.group(2)
+        api_key    = os.getenv("TMDB_API_KEY")
+        url        = f"https://api.themoviedb.org/3/{media_type}/{tmdb_id}?api_key={api_key}"
+        response   = httpx.get(url, timeout=5)
+        data       = response.json()
         return {
-            "popularity": data.get("popularity"),
+            "popularity":   data.get("popularity"),
             "vote_average": data.get("vote_average"),
-            "vote_count": data.get("vote_count"),
-            "genres": [g["name"] for g in data.get("genres", [])],
-            "budget": data.get("budget"),
-            "revenue": data.get("revenue"),
-            "status": data.get("status"),
+            "vote_count":   data.get("vote_count"),
+            "genres":       [g["name"] for g in data.get("genres", [])],
+            "budget":       data.get("budget"),
+            "revenue":      data.get("revenue"),
+            "status":       data.get("status"),
         }
     except Exception:
         return {}
 
 
-def fetch_omdb_data(omdb_link: str) -> dict:
+def fetch_omdb_data(imdb_link: str) -> dict:
     try:
-        match = re.search(r'(tt\d+)', omdb_link)
+        match = re.search(r'(tt\d+)', imdb_link)
         if not match:
             return {}
-        imdb_id = match.group(1)
-        api_key = os.getenv("OMDB_API_KEY")
-        url = f"https://www.omdbapi.com/?i={imdb_id}&apikey={api_key}"
+        imdb_id  = match.group(1)
+        api_key  = os.getenv("OMDB_API_KEY")
+        url      = f"https://www.omdbapi.com/?i={imdb_id}&apikey={api_key}"
         response = httpx.get(url, timeout=5)
-        data = response.json()
+        data     = response.json()
         return {
-            "imdb_rating": data.get("imdbRating"),
-            "imdb_votes": data.get("imdbVotes"),
-            "box_office": data.get("BoxOffice"),
-            "awards": data.get("Awards"),
-            "metascore": data.get("Metascore"),
-            "release_year": data.get("Year"),
+            "imdb_rating":    data.get("imdbRating"),
+            "imdb_votes":     data.get("imdbVotes"),
+            "box_office":     data.get("BoxOffice"),
+            "awards":         data.get("Awards"),
+            "metascore":      data.get("Metascore"),
+            "release_year":   data.get("Year"),
             "rotten_tomatoes": next(
                 (r["Value"] for r in data.get("Ratings", [])
                  if r["Source"] == "Rotten Tomatoes"), None
@@ -81,7 +87,61 @@ def fetch_omdb_data(omdb_link: str) -> dict:
     except Exception:
         return {}
 
+# ── AI Call Functions ──────────────────────────────────────────────────────────
+def call_gemini(prompt: str) -> str:
+    print("Using Gemini 2.5 Flash")
+    response = gemini_client.models.generate_content(
+        model="gemini-2.5-flash",
+        contents=prompt,
+        config=types.GenerateContentConfig(
+            response_mime_type="application/json",
+            thinking_config=types.ThinkingConfig(thinking_budget=0),
+            temperature=0.0
+        )
+    )
+    return response.text.strip()
 
+
+def call_groq(prompt: str) -> str:
+    print("Using Groq Llama 3.3 (fallback)")
+    response = groq_client.chat.completions.create(
+        model="llama-3.3-70b-versatile",
+        temperature=0.0,
+        messages=[
+            {
+                "role": "system",
+                "content": "You are a film licensing consultant. Always respond with valid JSON only. Never add explanations or markdown formatting outside the JSON."
+            },
+            {
+                "role": "user",
+                "content": prompt
+            }
+        ]
+    )
+    result = response.choices[0].message.content.strip()
+    # Strip markdown fences if Groq wraps response in ```json ... ```
+    if result.startswith("```"):
+        result = result.split("```")[1]
+        if result.startswith("json"):
+            result = result[4:]
+        result = result.strip()
+    return result
+
+# ── Fallback Response ──────────────────────────────────────────────────────────
+def unavailable_response(deal: DealRequest) -> dict:
+    return {
+        "title": deal.title,
+        "region": deal.region,
+        "pricing_estimate": {
+            "flat_fee_range": "Unavailable",
+            "minimum_guarantee": "Unavailable",
+            "revenue_share_range": "Unavailable"
+        },
+        "confidence_level": "Low",
+        "reasoning": "We were unable to generate an estimate at this time. Please try again."
+    }
+
+# ── Routes ─────────────────────────────────────────────────────────────────────
 @app.get("/health")
 def health():
     return {"status": "ok", "message": "Pricing module is running!"}
@@ -156,8 +216,8 @@ def estimate(deal: DealRequest):
     [RULE 3 — RIGHTS TYPE]
     - Exclusive → 2–3x premium over non-exclusive
     - Original + Dubbed → 20–40% premium over original only
-    - Original + Dubbed + Subtitled → 10–20% premium over original only (less than dubbed — subtitling is cheaper than dubbing)
-    
+    - Original + Dubbed + Subtitled → 10–20% premium over original only
+
     [RULE 4 — LICENSE DURATION]
     - 6 months → 0.4–0.5x of 1-year base
     - 1 year → base (1x)
@@ -169,10 +229,14 @@ def estimate(deal: DealRequest):
     [RULE 5 — LOW DATA OR SMALL MARKET]
     Trigger this when ANY of the following apply:
     - Box office is missing, N/A, or under USD 5,000,000
+    EXCEPTION: If the title is a TV series or season (indicated by "episodes"
+    in the duration field, or "Season" in the title), do NOT trigger on
+    missing box office — series have no theatrical revenue by definition.
+    Instead evaluate series value using IMDB votes, popularity score, and awards.
     - IMDB vote count under 10,000
     - TMDB popularity score under 3.0
     - Region is a small or emerging market (Caribbean, Pacific Islands,
-      Sub-Saharan Africa, Central Asia, or any country under 10M population)
+    Sub-Saharan Africa, Central Asia, or any country under 10M population)
 
     When triggered:
     - Use a base flat fee of USD 1,000 – USD 10,000
@@ -214,11 +278,19 @@ def estimate(deal: DealRequest):
     - 7–15 years old → 0.15–0.3x discount (library content)
     - 15+ years old → 0.05–0.15x discount (deep catalogue, minimal demand)
 
+    IMPORTANT — age discount interaction with license duration:
+    When license duration is Perpetual / Permanent, the age discount is
+    reduced by half. A perpetual license on an aged title still commands
+    significant value because the buyer owns the rights forever — the
+    duration premium partially offsets the age discount.
+    Example: a 15-year-old film would normally get 0.15–0.3x age discount,
+    but with perpetual rights apply only 0.4–0.6x discount instead.
+
     Exception — do NOT apply the age discount if:
     - Awards data shows a major win (Oscar, Palme d'Or, BAFTA, Golden Globe)
-    within the last 2 years — recent awards reset commercial value
+      within the last 2 years — recent awards reset commercial value
     - The title is a recognized classic with sustained cultural relevance
-    (e.g. The Godfather, Shawshank Redemption) — classics hold floor value
+      (e.g. The Godfather, Shawshank Redemption) — classics hold floor value
 
     REASONING STYLE — CRITICAL:
     Write the reasoning as a business consultant speaking to a licensing executive.
@@ -252,27 +324,21 @@ def estimate(deal: DealRequest):
     }}
     """
 
-    response = client.models.generate_content(
-        model="gemini-2.5-flash",
-        contents=prompt,
-        config=types.GenerateContentConfig(
-            response_mime_type="application/json"
-        )
-    )
+    # ── AI call with fallback ──────────────────────────────────────────────────
+    result = None
+    try:
+        result = call_gemini(prompt)
+    except Exception as e:
+        print(f"Gemini failed ({e.__class__.__name__}), falling back to Groq...")
+        try:
+            result = call_groq(prompt)
+        except Exception as e2:
+            print(f"Groq also failed: {e2}")
 
-    result = response.text.strip()
+    if not result:
+        return unavailable_response(deal)
 
     try:
         return json.loads(result)
     except json.JSONDecodeError:
-        return {
-            "title": deal.title,
-            "region": deal.region,
-            "pricing_estimate": {
-                "flat_fee_range": "Unavailable",
-                "minimum_guarantee": "Unavailable",
-                "revenue_share_range": "Unavailable"
-            },
-            "confidence_level": "Low",
-            "reasoning": "We were unable to generate an estimate at this time. Please try again."
-        }
+        return unavailable_response(deal)
