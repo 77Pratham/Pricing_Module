@@ -95,8 +95,8 @@ def call_gemini(prompt: str) -> str:
         contents=prompt,
         config=types.GenerateContentConfig(
             response_mime_type="application/json",
-            thinking_config=types.ThinkingConfig(thinking_budget=0),
-            temperature=0.0
+            thinking_config=types.ThinkingConfig(thinking_budget=1024),
+            temperature=0.3
         )
     )
     return response.text.strip()
@@ -106,7 +106,7 @@ def call_groq(prompt: str) -> str:
     print("Using Groq Llama 3.3 (fallback)")
     response = groq_client.chat.completions.create(
         model="llama-3.3-70b-versatile",
-        temperature=0.0,
+        temperature=0.3,
         messages=[
             {
                 "role": "system",
